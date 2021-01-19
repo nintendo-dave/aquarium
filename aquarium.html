@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Übungen</title>
+
+    <style>
+        .myCanvas{
+            border: 0px solid #c50;
+            background-color: rgb(129, 129, 129);
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+    <h1>Canvas: Seen-Slideshow</h1>
+    <br>
+    <canvas class="myCanvas" id="1"></canvas>
+
+
+    <script>
+
+        let i = 1;
+        let onCanvas = false;
+        let waiting = false;
+
+        changeImage();
+        let interval = window.setInterval(changeImage, 3000);
+
+        function changeImage(){
+
+            if(onCanvas){
+                window.clearInterval(interval);
+                waiting = true;
+                console.log('Dude. Get your mouse off that image! xD');
+                return;
+            }
+
+            if(i == 7){
+                i = 1;
+            }
+
+            let canvas = document.getElementById('1');
+            let ctx = canvas.getContext("2d");
+
+            let path = 'img/'+i+'.jpg';
+            console.log(path);
+
+            let img = new Image();
+            img.onload = function(){
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0,0);
+            };
+            img.src = path;            
+            i++;
+        }
+
+        window.addEventListener("mousemove", ev => {
+            //check if on canvas
+            let clientX = ev.clientX;
+            let clientY = ev.clientY;
+            let canvas = document.getElementById('1');
+            let domRect = document.getElementById('1').getBoundingClientRect();
+            let cLeft = domRect.left;
+            let cTop = domRect.top;
+            if( ((clientX >= cLeft) && (clientX <= cLeft + domRect.width)) && ((clientY >= cTop) && (clientY <= cTop + domRect.height))){
+                onCanvas = true;
+            } else {
+                onCanvas = false;
+                if(waiting){
+                    waiting = false;
+                    changeImage();
+                    interval = window.setInterval(changeImage, 3000);
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>
