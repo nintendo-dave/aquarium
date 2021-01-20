@@ -19,29 +19,52 @@
 </head>
 
 <body>
-    <!-- Width und Height setzen hier die Canvas, Bildqualität fest -->
+    <!-- Width und Height setzen hier die Canvas-Bildqualität fest -->
     <canvas id="mCanvas" width="1920" height="1080"></canvas>
     <script>
-            let canvas = document.getElementById('mCanvas');
-            let ctx = canvas.getContext("2d");
 
-            //Hintergrund
-            createScenery('bg', ctx);
-            //Alle Felsen - Was zuerst aufgerufen wird, kommt zu unterst
-            createScenery('z1', ctx);
-            createScenery('z2', ctx);
-            createScenery('z3', ctx);
+        //Canvas-Variabeln
+        let canvas = document.getElementById('mCanvas');
+        let ctx = canvas.getContext("2d");
+        //Szenerie-Variabeln
+        //Die hintersten sind links
+        let sceneryNames = ['bg', 'z1', 'z2', 'z3'];
+        let imgs = [];
+        let countImg = 0;
 
+        //Event beim laden des Dokuments
+        window.onload = (event) => {
+            preloadImages(ctx);
+        }
 
-            function createScenery(filename, ctx){
-                let path = 'img/'+ filename +'.png';
-                console.log(path);
+        function preloadImages(ctx){
+            //Durch jedes Bild iterieren
+            for(let i=0; i<sceneryNames.length; i++){
                 let img = new Image();
+                imgs.push(img);
+                //Beim laden checken, ob es das letzte Bild ist
                 img.onload = function(){
-                    ctx.drawImage(img, 0,0);
-                };
-                img.src = path;
+                    if(++countImg>= imgs.length){
+                        //Wenn alle Bilder geladen sind, werden sie gezeichnet
+                        console.log('All images loaded');
+                        drawScenery(imgs, ctx);
+                    }
+                }
+                img.src = 'img/'+ sceneryNames[i] +'.png';
+                console.log(img.src);
             }
+        }
+
+
+        //Funktion, die die Szenerie vom Hintergrund aus richtung Vordergrung zeichnet
+        function drawScenery(imgs, ctx){
+            imgs.forEach(img => {
+                ctx.drawImage(img, 0, 0);
+            });
+        }
+
+
+            
 </script>
 </body>
 
