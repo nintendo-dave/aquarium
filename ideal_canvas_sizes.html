@@ -38,21 +38,27 @@
         }
 
         function preloadImages(ctx){
-            //Durch jedes Bild iterieren
+            //Durch jedes Szenerie-Objekt iterieren
             for(let i=0; i<sceneryNames.length; i++){
                 let img = new Image();
                 imgs.push(img);
+
                 //Beim laden checken, ob es das letzte Bild ist
                 img.onload = function(){
                     if(++countImg>= imgs.length){
                         //Wenn alle Bilder geladen sind, werden sie gezeichnet
-                        console.log('All images loaded');
+                        console.log('All scenery images are loaded');
                         drawScenery(imgs, ctx);
                     }
                 }
                 img.src = 'img/'+ sceneryNames[i] +'.png';
-                console.log(img.src);
             }
+            //TEMPORÄR: HAI ANZEIGEN
+            let sharkTest = new Image();
+            sharkTest.onload = function(){
+                ctx.drawImage(sharkTest, 700, 800);
+            }
+            sharkTest.src = 'img/shark_normal.png';
         }
 
 
