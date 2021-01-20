@@ -7,9 +7,11 @@
     <title>Fishis</title>
 
     <style>
-        .myCanvas{
-            border: 0px solid #c50;
-            background-color: rgb(129, 129, 130);
+        #mCanvas{
+            border: 1px solid #000;
+            background-color: rgb(255, 255, 255);
+            width:90%;
+            height: 90%;
         }
 
     </style>
@@ -17,7 +19,30 @@
 </head>
 
 <body>
-    <br><br><br>brrrrrrrr
+    <!-- Width und Height setzen hier die Canvas, Bildqualität fest -->
+    <canvas id="mCanvas" width="1920" height="1080"></canvas>
+    <script>
+            let canvas = document.getElementById('mCanvas');
+            let ctx = canvas.getContext("2d");
+
+            //Hintergrund
+            createScenery('bg', ctx);
+            //Alle Felsen - Was zuerst aufgerufen wird, kommt zu unterst
+            createScenery('z1', ctx);
+            createScenery('z2', ctx);
+            createScenery('z3', ctx);
+
+
+            function createScenery(filename, ctx){
+                let path = 'img/'+ filename +'.png';
+                console.log(path);
+                let img = new Image();
+                img.onload = function(){
+                    ctx.drawImage(img, 0,0);
+                };
+                img.src = path;
+            }
+</script>
 </body>
 
 </html>
