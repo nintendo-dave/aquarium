@@ -53,12 +53,6 @@
                 }
                 img.src = 'img/'+ sceneryNames[i] +'.png';
             }
-            //TEMPORÄR: HAI ANZEIGEN
-            let sharkTest = new Image();
-            sharkTest.onload = function(){
-                ctx.drawImage(sharkTest, 700, 800);
-            }
-            sharkTest.src = 'img/shark_normal.png';
         }
 
 
@@ -67,6 +61,11 @@
             imgs.forEach(img => {
                 ctx.drawImage(img, 0, 0);
             });
+            
+            //Zeigt Test-Hai als letztes an
+            let sharkTest = new Image();
+            sharkTest.src = 'img/shark/shark_normal.png';
+            ctx.drawImage(sharkTest, 700, 800);
         }
 
 
