@@ -201,30 +201,40 @@
             let y = Math.random() * 1016;
             
             //Bestimmt zufällig, in welche Layer der Fisch eingefügt werden sollte
-            let layer;
+            let layer = new Array();
             let randLayer = Math.random();
 
             if(randLayer < 0.25){
-                layer = new Array(layers[0]);
+                layer = layers[0];
+                console.log('Fish spawned in Layer 0');
             }
             if((randLayer > 0.25) && (randLayer < 0.5)){
-                layer = new Array(layers[1]);
+                layer = layers[1];
+                console.log('Fish spawned in Layer 1');
             }
             if((randLayer > 0.5) && (randLayer < 0.75)){
-                layer = new Array(layers[2]);
+                layer = layers[2];
+                console.log('Fish spawned in Layer 2');
             }
             if(randLayer > 0.75){
-                layer = new Array(layers[3]);
+                layer = layers[3];
+                console.log('Fish spawned in Layer 3');
             }
 
             //Bestimmt zufällig, ob von links/rechts gestartet werden sollte
+            let fish;
             if(Math.random() < 0.5){
                 //Startet rechts und schwimmt nach links
-                let fish = new Fish(1920, y, -1, fishImg, ctx);
+                fish = new Fish(1920, y, -1, fishImg, ctx);
             } else{
                 //Startet links und schwimmt nach rechts
-                let fish = new Fish(-64, y, 1, fishImg, ctx);
+                fish = new Fish(-64, y, 1, fishImg, ctx);
             }
+
+            layer.contentArray.push(fish);
+            console.log('Layer 3 check: ');
+            console.log(JSON.stringify(layer.contentArray));
+
         }
 
         //Animation Loop
@@ -261,7 +271,6 @@
             previousFrameTime = actualTime;
 
             //Bei allen Fischen die neue Position berechnen
-            console.log(layers);
             layers.forEach(layer => function(){
                 layer.contentArray.forEach(fish => function(){
                     fish.updatePositition(passedTimeSincePreviousFrame);
