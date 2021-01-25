@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fishis</title>
+
+    <style>
+        #mCanvas{
+            border: 1px solid #000;
+            background-color: rgb(255, 255, 255);
+            width:90%;
+            height: 90%;
+        }
+
+    </style>
+
+    <!--- Script für Laden aller Bilder -->
+    <script>
+        
+    </script>
+</head>
+
+<body>
+    <!-- Width und Height setzen hier die Canvas-Bildqualität fest -->
+    <canvas id="mCanvas" width="1920" height="1080"></canvas>
+
+    <!--- In progress Script -->
+    <script>
+//-------------------------------------------------------------------------------------------
+//Klassen
+//-------------------------------------------------------------------------------------------
+
+
+        class Drawable{
+            constructor(){
+                this.y;
+                this.x;
+                this.imgSprite;
+            }
+
+            draw(ctx, x, y){
+                ctx.drawImage(imgSprite, x, y);
+            }
+
+        }
+
+        class Fish extends Drawable{
+
+            //Variable direction ist negativ oder positiv
+            //Richtung ist links, wenn negativ
+            //Richtung ist rechts, wenn positiv
+            constructor(x, y, direction, imgSprite){
+                super();
+                this.x = x;
+                this.y = y;
+                this.time = 0;
+                this.direction = direction;
+                this.speed = direction * 10;
+                this.imgSprite = imgSprite;
+            }
+
+            updatePosititionAndDraw(){
+                
+            }
+        }
+
+        
+        class Layer extends Drawable{
+            constructor(contentArray){
+                super();
+                this.contentArray = contentArray;
+            }
+        }
+
+//-------------------------------------------------------------------------------------------
+//Variabeln
+//-------------------------------------------------------------------------------------------
+        
+        //Canvas-Variabeln
+        let canvas= document.getElementById('mCanvas');
+        let ctx = canvas.getContext('2d');
+        let gameFrame = 0;
+
+        //Fisch-Arrays für jede Ebene
+        let z0 = new Array();
+        let z1 = new Array();
+        let z2 = new Array();
+        let z3 = new Array();
+
+        //Liste mit Fischbilder
+        let fishImgSprites = new Array();
+
+        //Liste mit Haibilder
+        let sharkImgSprites = new Array();
+
+        //Liste mit Szenerie-Layers
+        let layers = new Array();
+        layers.push(new Layer(z0));
+        layers.push(new Layer(z1));
+        layers.push(new Layer(z2));
+        layers.push(new Layer(z3));
+
+        let countImg = 0;
+
+//-------------------------------------------------------------------------------------------
+//Methoden
+//-------------------------------------------------------------------------------------------
+        
+        //Funktion, die alle Bilder ladet, bevor sie gezeichnet werden
+        function preloadImages(ctx){
+
+            //Fischbilder laden
+            for(let i=0; i<5; i++){
+                let img = new Image();
+                img.src = 'img/fish/'+ i +'.png';
+                fishImgSprites.push(img);
+            }
+
+            console.log('All fish images are loaded');
+            
+            //Haibilder laden
+            sharkImgSprites[0] = new Image();
+            sharkImgSprites[0].src = 'img/shark/biting.png';
+            sharkImgSprites[1] = new Image();
+            sharkImgSprites[1].src = 'img/shark/normal.png';
+            console.log('All shark images are loaded');
+
+            //Durch jedes Layer-Array iterieren und Bild hinzufügen
+            for(let i=0; i<layers.length; i++){
+                let img = new Image();
+
+                //Beim laden checken, ob es das letzte Bild ist
+                img.onload = function(){
+                    if(++countImg == layers.length){
+                        //Wenn alle Szenerie-Bilder geladen sind, werden sie gezeichnet
+                        console.log('All scenery images are loaded');
+                        drawScenery(layers, ctx);
+                    }
+                }
+                img.src = 'img/z'+ i +'.png';
+                layers[i].imgSprite = img;
+            }
+
+        }
+
+        //Funktion, die die Szenerie vom Hintergrund aus in Richtung Vordergrund zeichnet
+        function drawScenery(layers, ctx){
+            layers.forEach(layer => {
+                ctx.drawImage(layer.imgSprite, 0, 0);
+            });
+        }
+
+        //Diese Funktion erstellt einen zufälligen Fisch und fügt ihn in eine zufällige Layer ein
+        function spawnFish(){
+            
+            //Generiere zufällig die Farbe. 5 Farben mit Wahrscheinlichkeit von 20%
+            let fishImg = new Image();
+            let randColor = Math.random();
+
+            //Grün
+            if(randColor < 0.2){
+                fishImg = fishImgSprites[0];
+            }
+            //Orange
+            if((randColor > 0.2) && (randColor < 0.4)){
+                fishImg = fishImgSprites[1];
+            }
+            //Gelb
+            if((randColor > 0.4) && (randColor < 0.6)){
+                fishImg = fishImgSprites[2];
+            }
+            //Pink
+            if((randColor > 0.6) && (randColor < 0.8)){
+                fishImg = fishImgSprites[3];
+            }
+            //Blau
+            if(randColor < 0.8){
+                fishImg = fishImgSprites[4];
+            }
+
+            //Generiere zufällig Y-Position. 1060 = 1080px - Fisch-Höhe(64px)
+            let y = Math.random() * 1016;
+            
+            //Bestimmt zufällig, in welche Layer der Fisch eingefügt werden sollte
+            let layer;
+            let randLayer = Math.random();
+
+            if(randLayer < 0.25){
+                layer = new Array(layers[0]);
+            }
+            if((randLayer > 0.25) && (randLayer < 0.5)){
+                layer = new Array(layers[1]);
+            }
+            if((randLayer > 0.5) && (randLayer < 0.75)){
+                layer = new Array(layers[2]);
+            }
+            if(randLayer > 0.75){
+                layer = new Array(layers[3]);
+            }
+
+            //Bestimmt zufällig, ob von links/rechts gestartet werden sollte
+            if(Math.random() < 0.5){
+                //Startet rechts und schwimmt nach links
+                let fish = new Fish(1920, y, -1, fishImg)
+            } else{
+                //Startet links und schwimmt nach rechts
+                let fish = new Fish(-64, y, 1, fishImg);
+            }
+        }
+
+        //Animation Loop
+        function animate(){
+            
+            gameFrame++;
+            requestAnimationFrame(animate);
+        }
+
+        function start(){
+            spawnFish();
+        }
+
+
+//-------------------------------------------------------------------------------------------
+//Animation-Methode(Kopie v. Herr Senn)
+//-------------------------------------------------------------------------------------------
+
+        var duration = 3000;
+        var xStart = 0;
+        var distance = 200;
+
+        let previousFrameTime = 0;
+
+        function showFrame(actualTime, duration, xStart, distance){
+            previousFrameTime = actualTime;
+
+            //Position des Rechtecks
+            let x = xStart + distance/duration * actualTime;
+          
+            //nächster Animationsschritt (rekursiv)
+            window.requestAnimationFrame(function(actualTime){
+                showFrame(actualTime, duration, xStart, distance);
+            });
+        }
+
+//-------------------------------------------------------------------------------------------
+//Events
+//-------------------------------------------------------------------------------------------
+
+        //Event beim laden des Dokuments
+        window.onload = (event) => {
+            preloadImages(ctx);
+            start();
+        }
+
+    </script>
+</body>
+
+</html>

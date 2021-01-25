@@ -1,0 +1,23 @@
+<script>var i, tmp, x = 55, y = 66, end, ini = performance.now();
+
+    // Math.sqrt operation
+    i = 0;
+    ini = performance.now();
+    tmp = 0;
+    while(i++ < 2000000){
+        tmp += Math.sqrt(x*x + y*y)
+    }
+    end = performance.now();
+    console.log(tmp, "Math.sqrt operation: " + (end - ini) + " ms");
+    
+    // Math.hypot
+    
+    i = 0;
+    ini = performance.now();
+    tmp = 0;
+    while(i++ < 2000000){
+        tmp += Math.hypot(x, y)
+    }
+    end = performance.now();
+    
+    console.log(tmp, "Math.hypot: " + (end - ini) + " ms");</script>

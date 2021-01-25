@@ -24,6 +24,7 @@ canvas.addEventListener('mousedown', function(event){
 canvas.addEventListener('mouseup',function(){
     mouse.click = false;
 })
+
 //Spieler 
 class Player{
     constructor(){
