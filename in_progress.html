@@ -28,14 +28,15 @@
 
 
         class Drawable{
-            constructor(){
-                this.y;
-                this.x;
-                this.imgSprite;
+            constructor(x, y, imgSprite, ctx){
+                this.y = y;
+                this.x = x;
+                this.imgSprite = imgSprite;
+                this.ctx = ctx;
             }
 
-            draw(ctx, x, y){
-                ctx.drawImage(imgSprite, x, y);
+            draw(){
+                this.ctx.drawImage(this.imgSprite, this.x, this.y);
             }
 
         }
@@ -43,50 +44,48 @@
         class Fish extends Drawable{
 
             //Variable direction ist negativ oder positiv
-            //Richtung ist links, wenn negativ
-            //Richtung ist rechts, wenn positiv
+            //Direction:
+            //-1 = links
+            // 1 = rechts
             constructor(x, y, direction, imgSprite, ctx){
-                super();
-                this.x = x;
-                this.y = y;
-                this.time = 0;
-                this.direction = direction;
+                super(x, y, imgSprite, ctx);
                 //Speed ist in Pixel pro Sekunde
-                this.speed = direction * 10;
-                this.imgSprite = imgSprite;
-                this.ctx = ctx;
+                this.speed = direction * 500;
                 this.toDelete = false;
+                this.direction = direction;
 
                 //Debugging
                 console.log('Fisch erstellt.\nY: ' + y)
             }
 
             updatePositition(passedTimeSincePreviousFrame){
+
                 //TODO: IF SHARK NEAR, SET direction to opposite side of shark
 
-                x = direction * passedTimeSincePreviousFrame * speed;
-                console.log('Fisch new x: ' + x);
+                this.x += (passedTimeSincePreviousFrame/1000) * this.speed;
+                console.log('Fisch new x: ' + this.x);
                 //TODO: IF OUTSIDE OF CANVAS, SET toDelete to true
 
-            }
 
-            draw(){
-                
-            }
+                //Überprüfe, ob noch im Canvas
+                if(((this.x < -64) || (this.x > 1920))){
+                    this.toDelete = true;
+                }
 
+            }
 
             printStats(){
-                console.log('X: '+x);
-                console.log('Y: '+y);
-                console.log('Direction: '+direction);
-                console.log('IMG: '+imgSprite.src);
+                console.log('X: '+this.x);
+                console.log('Y: '+this.y);
+                console.log('Direction: '+this.direction);
+                console.log('IMG: '+this.imgSprite.src);
             }
         }
 
         
         class Layer extends Drawable{
             constructor(contentArray){
-                super();
+                super(0, 0, null, null);
                 this.contentArray = contentArray;
             }
         }
@@ -100,12 +99,6 @@
         let ctx = canvas.getContext('2d');
         let gameFrame = 0;
 
-        //Fisch-Arrays für jede Ebene
-        let z0 = new Array();
-        let z1 = new Array();
-        let z2 = new Array();
-        let z3 = new Array();
-
         //Liste mit Fischbilder
         let fishImgSprites = new Array();
 
@@ -114,10 +107,10 @@
 
         //Liste mit Szenerie-Layers
         let layers = new Array();
-        layers.push(new Layer(z0));
-        layers.push(new Layer(z1));
-        layers.push(new Layer(z2));
-        layers.push(new Layer(z3));
+
+        for(let i=0; i<4; i++){
+            layers.push(new Layer(new Array()));
+        }
 
         let countImg = 0;
 
@@ -144,7 +137,7 @@
             sharkImgSprites[1].src = 'img/shark/normal.png';
             console.log('All shark images are loaded');
 
-            //Durch jedes Layer-Array iterieren und Bild hinzufügen
+            //Durch jedes Layer-Listenelement iterieren und Bild hinzufügen
             for(let i=0; i<layers.length; i++){
                 let img = new Image();
 
@@ -153,20 +146,13 @@
                     if(++countImg == layers.length){
                         //Wenn alle Szenerie-Bilder geladen sind, werden sie gezeichnet
                         console.log('All scenery images are loaded');
-                        drawScenery(layers, ctx);
                     }
                 }
                 img.src = 'img/z'+ i +'.png';
                 layers[i].imgSprite = img;
+                layers[i].ctx = ctx;
             }
 
-        }
-
-        //Funktion, die die Szenerie vom Hintergrund aus in Richtung Vordergrund zeichnet
-        function drawScenery(layers, ctx){
-            layers.forEach(layer => {
-                ctx.drawImage(layer.imgSprite, 0, 0);
-            });
         }
 
         //Diese Funktion erstellt einen zufälligen Fisch und fügt ihn in eine zufällige Layer ein
@@ -231,9 +217,12 @@
                 fish = new Fish(-64, y, 1, fishImg, ctx);
             }
 
+            //Fisch in die Layer einfügen
             layer.contentArray.push(fish);
-            console.log('Layer 3 check: ');
-            console.log(JSON.stringify(layer.contentArray));
+
+            //Debugging
+            //console.log('Layer check: ');
+            //console.log(JSON.stringify(layer.contentArray));
 
         }
 
@@ -249,38 +238,46 @@
 
             //erster Animationsschritt
             window.requestAnimationFrame(function(actualTime){
-                showFrame(actualTime, 1, 2);
+                showFrame(actualTime, 0, 0);
             });
         }
 
 
 //-------------------------------------------------------------------------------------------
-//Animation-Methode(Kopie v. Herr Senn)
+//Animation-Methode
 //-------------------------------------------------------------------------------------------
-
-        var duration = 3000;
-        var xStart = 0;
-        var distance = 200;
 
         //Variable mit der verstrichenen Zeit ab letztem Frame in Milisekunden
         let previousFrameTime = 0;
 
         function showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame){
 
+            //Alles leerfegen
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+
             passedTimeSincePreviousFrame = actualTime - previousFrameTime;
             previousFrameTime = actualTime;
 
-            //Bei allen Fischen die neue Position berechnen
-            layers.forEach(layer => function(){
-                layer.contentArray.forEach(fish => function(){
-                    fish.updatePositition(passedTimeSincePreviousFrame);
-                    fish.printStats();
-                });
-                console.log('now in layer');
-            });
+            //Bei allen Fischen die neue Position berechnen            
+            for(let i = 0; i<layers.length; i++){
+                layers[i].draw();
 
+                for(let j = 0; j<layers[i].contentArray.length; j++){
+                    let fish = layers[i].contentArray[j];
 
-            
+                    //Abchecken, ob Fisch gelöscht werden muss
+                    if(fish.toDelete){
+                        layers[i].contentArray.splice(j,1);
+                        console.log('time to go');
+                        break;
+                    } else {
+                        //Fischposition aktualisieren
+                        fish.updatePositition(passedTimeSincePreviousFrame);
+                        fish.draw();
+                    }
+                }
+            }
+
             //nächster Animationsschritt (rekursiv)
             window.requestAnimationFrame(function(actualTime){
                 showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame);
