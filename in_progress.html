@@ -58,14 +58,14 @@
                 this.toDelete = false;
 
                 //Debugging
-                console.log('Fisch erstellt: ' + y)
+                console.log('Fisch erstellt.\nY: ' + y)
             }
 
             updatePositition(passedTimeSincePreviousFrame){
                 //TODO: IF SHARK NEAR, SET direction to opposite side of shark
 
                 x = direction * passedTimeSincePreviousFrame * speed;
-
+                console.log('Fisch new x: ' + x);
                 //TODO: IF OUTSIDE OF CANVAS, SET toDelete to true
 
             }
@@ -260,15 +260,14 @@
             passedTimeSincePreviousFrame = actualTime - previousFrameTime;
             previousFrameTime = actualTime;
 
-            console.log('prev. Frame Time: ' + previousFrameTime);
-            console.log('Time since last Frame: ' + passedTimeSincePreviousFrame);
-
             //Bei allen Fischen die neue Position berechnen
+            console.log(layers);
             layers.forEach(layer => function(){
                 layer.contentArray.forEach(fish => function(){
                     fish.updatePositition(passedTimeSincePreviousFrame);
                     fish.printStats();
                 });
+                console.log('now in layer');
             });
 
 
