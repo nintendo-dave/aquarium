@@ -41,6 +41,12 @@
 
         }
 
+        class Shark extends Drawable(){
+            constructor(x, y, imgSprite, ctx){
+                super(x,y,imgSprite,ctx);
+            }
+        }
+
         class Fish extends Drawable{
 
             //Variable direction ist negativ oder positiv
@@ -62,8 +68,8 @@
 
                 //TODO: IF SHARK NEAR, SET direction to opposite side of shark
 
+
                 this.x += (passedTimeSincePreviousFrame/1000) * this.speed;
-                console.log('Fisch new x: ' + this.x);
                 //TODO: IF OUTSIDE OF CANVAS, SET toDelete to true
 
 
@@ -113,6 +119,9 @@
         }
 
         let countImg = 0;
+        //Sorgt, dass wenn ein Fisch während dem zeichnen gespawnt wird, es keinen NullPointer gibt
+        let newFish = false;
+        let repeatIteration = false;
 
 //-------------------------------------------------------------------------------------------
 //Methoden
@@ -218,12 +227,21 @@
             }
 
             //Fisch in die Layer einfügen
+            newFish = true;
             layer.contentArray.push(fish);
+
+            //Die Methode in x-y Sekunden wieder aufrufen
+            let randSpawnTime = Math.random();
+            
 
             //Debugging
             //console.log('Layer check: ');
             //console.log(JSON.stringify(layer.contentArray));
+            delay(500).then(() => spawnFish());
+        }
 
+        function delay(miliseconds){
+            return new Promise(resolve => setTimeout(resolve, miliseconds));
         }
 
         //Animation Loop
@@ -262,20 +280,29 @@
             for(let i = 0; i<layers.length; i++){
                 layers[i].draw();
 
-                for(let j = 0; j<layers[i].contentArray.length; j++){
-                    let fish = layers[i].contentArray[j];
+                repeatIteration = true;
 
-                    //Abchecken, ob Fisch gelöscht werden muss
-                    if(fish.toDelete){
-                        layers[i].contentArray.splice(j,1);
-                        console.log('time to go');
-                        break;
-                    } else {
-                        //Fischposition aktualisieren
-                        fish.updatePositition(passedTimeSincePreviousFrame);
-                        fish.draw();
+                //Iteriert durch alle Layers und Fische und zeichnet sie in der richtigen Reihenfolge
+                //do..while(repeatIteration) sorgt dafür, dass wenn ein neuer Fisch während dem
+                //iterieren erstellt wird, kein NullPointerException entsteht
+                for(let j = 0; j<layers[i].contentArray.length; j++){
+                        if(!newFish){
+                            let fish = layers[i].contentArray[j];
+                            //Abchecken, ob Fisch gelöscht werden muss
+                            if(fish.toDelete){
+                                layers[i].contentArray.splice(j,1);
+                                console.log('time to go');
+                                break;
+                            } else {
+                                //Fischposition aktualisieren
+                                fish.updatePositition(passedTimeSincePreviousFrame);
+                                fish.draw();
+                            }   
+                        } else{
+                            newFish = false;
+                            repeatIteration = true;
+                        }
                     }
-                }
             }
 
             //nächster Animationsschritt (rekursiv)
