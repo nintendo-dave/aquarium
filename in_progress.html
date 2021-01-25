@@ -13,13 +13,7 @@
             width:90%;
             height: 90%;
         }
-
     </style>
-
-    <!--- Script für Laden aller Bilder -->
-    <script>
-        
-    </script>
 </head>
 
 <body>
@@ -51,18 +45,41 @@
             //Variable direction ist negativ oder positiv
             //Richtung ist links, wenn negativ
             //Richtung ist rechts, wenn positiv
-            constructor(x, y, direction, imgSprite){
+            constructor(x, y, direction, imgSprite, ctx){
                 super();
                 this.x = x;
                 this.y = y;
                 this.time = 0;
                 this.direction = direction;
+                //Speed ist in Pixel pro Sekunde
                 this.speed = direction * 10;
                 this.imgSprite = imgSprite;
+                this.ctx = ctx;
+                this.toDelete = false;
+
+                //Debugging
+                console.log('Fisch erstellt: ' + y)
             }
 
-            updatePosititionAndDraw(){
+            updatePositition(passedTimeSincePreviousFrame){
+                //TODO: IF SHARK NEAR, SET direction to opposite side of shark
+
+                x = direction * passedTimeSincePreviousFrame * speed;
+
+                //TODO: IF OUTSIDE OF CANVAS, SET toDelete to true
+
+            }
+
+            draw(){
                 
+            }
+
+
+            printStats(){
+                console.log('X: '+x);
+                console.log('Y: '+y);
+                console.log('Direction: '+direction);
+                console.log('IMG: '+imgSprite.src);
             }
         }
 
@@ -203,10 +220,10 @@
             //Bestimmt zufällig, ob von links/rechts gestartet werden sollte
             if(Math.random() < 0.5){
                 //Startet rechts und schwimmt nach links
-                let fish = new Fish(1920, y, -1, fishImg)
+                let fish = new Fish(1920, y, -1, fishImg, ctx);
             } else{
                 //Startet links und schwimmt nach rechts
-                let fish = new Fish(-64, y, 1, fishImg);
+                let fish = new Fish(-64, y, 1, fishImg, ctx);
             }
         }
 
@@ -219,6 +236,11 @@
 
         function start(){
             spawnFish();
+
+            //erster Animationsschritt
+            window.requestAnimationFrame(function(actualTime){
+                showFrame(actualTime, 1, 2);
+            });
         }
 
 
@@ -230,17 +252,30 @@
         var xStart = 0;
         var distance = 200;
 
+        //Variable mit der verstrichenen Zeit ab letztem Frame in Milisekunden
         let previousFrameTime = 0;
 
-        function showFrame(actualTime, duration, xStart, distance){
+        function showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame){
+
+            passedTimeSincePreviousFrame = actualTime - previousFrameTime;
             previousFrameTime = actualTime;
 
-            //Position des Rechtecks
-            let x = xStart + distance/duration * actualTime;
-          
+            console.log('prev. Frame Time: ' + previousFrameTime);
+            console.log('Time since last Frame: ' + passedTimeSincePreviousFrame);
+
+            //Bei allen Fischen die neue Position berechnen
+            layers.forEach(layer => function(){
+                layer.contentArray.forEach(fish => function(){
+                    fish.updatePositition(passedTimeSincePreviousFrame);
+                    fish.printStats();
+                });
+            });
+
+
+            
             //nächster Animationsschritt (rekursiv)
             window.requestAnimationFrame(function(actualTime){
-                showFrame(actualTime, duration, xStart, distance);
+                showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame);
             });
         }
 
