@@ -58,6 +58,7 @@
                 this.speed = direction * 500;
                 this.toDelete = false;
                 this.direction = direction;
+                this.hasFear = false;
 
                 //Indexe vom Fisch
                 this.parentLayer = 0;
@@ -103,20 +104,26 @@
 
             calculateFear(){
                 let distanceToShark = this.getDistance();
-                if(distanceToShark < 300){
+
+                //Wenn Distanz zum Hai kleiner als 300 in-Canvas-Pixel ist, dann bekommt er Angst über
+                if(distanceToShark < 400){
                     this.speed = this.direction * 1000;
                     console.log('AAAAAAAAAAAAAAAAAAAAAAH X: '+ shark.centerX+'Y: '+shark.centerY);
-                    shark.imgCurrent = sharkImgs[0];
+                    this.hasFear = true;
+
+                    this.direction = this.checkSharkHorizontally();
                 } else{
                     this.speed = this.direction * 500;
-                    shark.imgCurrent = sharkImgs[1];
+                    this.hasFear = false;
                 }
             }
 
             //Überprüfe, ob rechts oder links vom Hai
             checkSharkHorizontally(){
-                if((this.x + 32) < shark){
-
+                if((this.centerX + 32) < shark.centerX){
+                    return -1;
+                } else{
+                    return 1;
                 }
             }
 
@@ -124,13 +131,6 @@
             //Wenn Flucht nach oben/unter ermöglicht werden möchte, dann diese Funktion ausbauen!
             checkSharkVertically(){
                 //Dein Code
-            }
-
-            printStats(){
-                console.log('X: '+this.x);
-                console.log('Y: '+this.y);
-                console.log('Direction: '+this.direction);
-                console.log('IMG: '+this.imgCurrent.src);
             }
         }
 
@@ -166,7 +166,7 @@
             }
 
             draw = function(){
-                if((this.direction == -1) && (this.oldX - this.x) > 1 ){
+                if((this.direction == -1) ){
                     ctx.translate(this.x + this.imgCurrent.width, this.y);
                     ctx.scale(-1,1);
                     this.ctx.drawImage(this.imgCurrent, 197, -69);
@@ -212,8 +212,10 @@
         
         //Variabeln um zu verhindern, dass ein Fisch während dem Zeichnen gespawnt/gelöscht wird
         let makeNewFish = false;
-        //Ein 'Fisch-Müllkorb'
+        //Ein Array der als'Fisch-Müllkorb' agiert
         let fishToDelete = new Array();
+        //Boolean, der auf true ist, wenn min. 1 Fisch Angst hat
+        let hasSomebodyFear = false;
 
 //-------------------------------------------------------------------------------------------
 //Methoden
@@ -396,14 +398,20 @@
                 //1. Hintergrund der Ebene zeichnen
                 layers[i].draw();
 
+                hasSomebodyFear = false;
                 //2. Iteriere durch Fisch-Liste der Ebene und aktualisiere/zeichne/lösche sie
                 for(let j = 0; j<layers[i].contentArray.length; j++){
-
+                    
                     //Abchecken, ob Fisch gelöscht werden muss
                     let fish = layers[i].contentArray[j];
                     if(fish.toDelete){
                         fishToDelete.push(fish);
                     } else {
+                        //Abchecken, ob der Fisch Angst hat
+                        if(this.hasFear){
+                            hasSomebodyFear = true;
+                        }
+
                         //Fischposition aktualisieren
                         fish.updatePositition(passedTimeSincePreviousFrame);
                         fish.draw();
