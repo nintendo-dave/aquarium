@@ -41,11 +41,7 @@
 
         }
 
-        class Shark extends Drawable(){
-            constructor(x, y, imgSprite, ctx){
-                super(x,y,imgSprite,ctx);
-            }
-        }
+
 
         class Fish extends Drawable{
 
@@ -60,8 +56,11 @@
                 this.toDelete = false;
                 this.direction = direction;
 
+                //Indexe vom Fisch
+                this.parentLayer = 0;
+
                 //Debugging
-                console.log('Fisch erstellt.\nY: ' + y)
+                //console.log('Fisch erstellt.\nY: ' + y)
             }
 
             updatePositition(passedTimeSincePreviousFrame){
@@ -119,9 +118,10 @@
         }
 
         let countImg = 0;
-        //Sorgt, dass wenn ein Fisch während dem zeichnen gespawnt wird, es keinen NullPointer gibt
-        let newFish = false;
-        let repeatIteration = false;
+        //Variabeln um zu verhindern, dass ein Fisch während dem Zeichnen gespawnt/gelöscht wird
+        let makeNewFish = false;
+        //Ein 'Fisch-Müllkorb'
+        let fishToDelete = new Array();
 
 //-------------------------------------------------------------------------------------------
 //Methoden
@@ -196,24 +196,21 @@
             let y = Math.random() * 1016;
             
             //Bestimmt zufällig, in welche Layer der Fisch eingefügt werden sollte
-            let layer = new Array();
             let randLayer = Math.random();
+            let indexOfLayer = 0;
+            let indexInContentArray = 0;
 
             if(randLayer < 0.25){
-                layer = layers[0];
-                console.log('Fish spawned in Layer 0');
+                indexOfLayer = 0;
             }
             if((randLayer > 0.25) && (randLayer < 0.5)){
-                layer = layers[1];
-                console.log('Fish spawned in Layer 1');
+                indexOfLayer = 1;
             }
             if((randLayer > 0.5) && (randLayer < 0.75)){
-                layer = layers[2];
-                console.log('Fish spawned in Layer 2');
+                indexOfLayer = 2;
             }
             if(randLayer > 0.75){
-                layer = layers[3];
-                console.log('Fish spawned in Layer 3');
+                indexOfLayer = 3;
             }
 
             //Bestimmt zufällig, ob von links/rechts gestartet werden sollte
@@ -227,28 +224,21 @@
             }
 
             //Fisch in die Layer einfügen
-            newFish = true;
-            layer.contentArray.push(fish);
+            layers[indexOfLayer].contentArray.push(fish);
+            fish.parentLayer = indexOfLayer;
+            console.log('Fish spawned in Layer '+ fish.parentLayer);
 
-            //Die Methode in x-y Sekunden wieder aufrufen
-            let randSpawnTime = Math.random();
-            
 
             //Debugging
-            //console.log('Layer check: ');
             //console.log(JSON.stringify(layer.contentArray));
-            delay(500).then(() => spawnFish());
+
+            //Sorgt dafür, dass nach 0.5s makeNewFish auf true gesetzt wird
+            makeNewFish = false;
+            delay(500).then(() => {makeNewFish = true;});
         }
 
         function delay(miliseconds){
             return new Promise(resolve => setTimeout(resolve, miliseconds));
-        }
-
-        //Animation Loop
-        function animate(){
-            
-            gameFrame++;
-            requestAnimationFrame(animate);
         }
 
         function start(){
@@ -260,6 +250,14 @@
             });
         }
 
+        function getContentIndexOfFish(f) {    
+            for (let i = 0; i < layers[f.parentLayer].contentArray.length; i++) {
+                if (layers[f.parentLayer].contentArray[i] = f) {
+                    return i;
+                }
+            }
+            return -1;
+        }
 
 //-------------------------------------------------------------------------------------------
 //Animation-Methode
@@ -268,41 +266,53 @@
         //Variable mit der verstrichenen Zeit ab letztem Frame in Milisekunden
         let previousFrameTime = 0;
 
-        function showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame){
+        //Variable um lags zu erkennen
+        let frameCount = 0;
+        let fps = 0;
 
+        function showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame){
+            
             //Alles leerfegen
             ctx.clearRect(0,0, canvas.width, canvas.height);
 
             passedTimeSincePreviousFrame = actualTime - previousFrameTime;
             previousFrameTime = actualTime;
 
-            //Bei allen Fischen die neue Position berechnen            
+            //Debugging: FPS
+            //frameCount++;
+            //console.log('Time since last Frame: ' + passedTimeSincePreviousFrame);
+
+            //Erstellt neuen Fisch, wenn makeNewFish wahr ist
+            //makeNewFish wird am Ende der Methode spawnFish() behandelt
+            if(makeNewFish){
+                spawnFish();
+            }
+            
+            fishToDelete.forEach(function(fish, index){
+                let fishContentIndex = getContentIndexOfFish(fish);
+                layers[fish.parentLayer].contentArray.splice(fishContentIndex, 1);
+                fishToDelete.splice(index, 1);
+            });
+
+            //Code um neues Frame zu erstellen           
             for(let i = 0; i<layers.length; i++){
+
+                //1. Hintergrund der Ebene zeichnen
                 layers[i].draw();
 
-                repeatIteration = true;
-
-                //Iteriert durch alle Layers und Fische und zeichnet sie in der richtigen Reihenfolge
-                //do..while(repeatIteration) sorgt dafür, dass wenn ein neuer Fisch während dem
-                //iterieren erstellt wird, kein NullPointerException entsteht
+                //2. Iteriere durch Fisch-Liste der Ebene und aktualisiere/zeichne/lösche sie
                 for(let j = 0; j<layers[i].contentArray.length; j++){
-                        if(!newFish){
-                            let fish = layers[i].contentArray[j];
-                            //Abchecken, ob Fisch gelöscht werden muss
-                            if(fish.toDelete){
-                                layers[i].contentArray.splice(j,1);
-                                console.log('time to go');
-                                break;
-                            } else {
-                                //Fischposition aktualisieren
-                                fish.updatePositition(passedTimeSincePreviousFrame);
-                                fish.draw();
-                            }   
-                        } else{
-                            newFish = false;
-                            repeatIteration = true;
-                        }
+
+                    //Abchecken, ob Fisch gelöscht werden muss
+                    let fish = layers[i].contentArray[j];
+                    if(fish.toDelete){
+                        fishToDelete.push(fish);
+                    } else {
+                        //Fischposition aktualisieren
+                        fish.updatePositition(passedTimeSincePreviousFrame);
+                        fish.draw();
                     }
+                }
             }
 
             //nächster Animationsschritt (rekursiv)
