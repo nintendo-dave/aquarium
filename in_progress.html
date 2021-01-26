@@ -33,6 +33,10 @@
                 this.x = x;
                 this.imgCurrent = imgCurrent;
                 this.ctx = ctx;
+                this.centerX = 0;
+                this.centerY = 0;
+                this.oldX = 0;
+                this.oldY = 0;
             }
 
             draw(){
@@ -65,17 +69,61 @@
             updatePositition(passedTimeSincePreviousFrame){
 
                 //TODO: IF SHARK NEAR, SET direction to opposite side of shark
-
-
+                this.oldX = this.x;
+                this.oldY = this.y;
+                this.calculateFear();
                 this.x += (passedTimeSincePreviousFrame/1000) * this.speed;
-                //TODO: IF OUTSIDE OF CANVAS, SET toDelete to true
-
+                this.centerX = this.x+32;
+                this.centerY = this.y+19.5;
 
                 //Überprüfe, ob noch im Canvas
                 if(((this.x < -64) || (this.x > 1920))){
                     this.toDelete = true;
+                    console.log('Time to go');
                 }
 
+            }
+
+            getDistance(){
+                //Zuerst schauen, ob der Hai und der Fisch auf der gleichen
+                //X oder Y Koordinate sind
+                if(Math.floor(shark.centerX) == Math.floor(this.centerX)){
+                    console.log('Same x');
+                    return this.centerY - shark.centerY;
+                } else if(Math.floor(shark.centerY) == Math.floor(this.centerY)){
+                    return this.centerX - shark.centerX;
+                    console.log('Same y');
+                } else{
+                    //Berechne Distanz durch Satz von Pythagoras
+                    //console.log(this.centerX-shark.centerX+'^2 + '+this.centerY-shark.centerY+'^2');
+                    console.log(this.centerX);
+                    return Math.sqrt((this.centerX-shark.centerX)**2 + (this.centerY-shark.centerY)**2);
+                }
+            }
+
+            calculateFear(){
+                let distanceToShark = this.getDistance();
+                if(distanceToShark < 300){
+                    this.speed = this.direction * 1000;
+                    console.log('AAAAAAAAAAAAAAAAAAAAAAH X: '+ shark.centerX+'Y: '+shark.centerY);
+                    shark.imgCurrent = sharkImgs[0];
+                } else{
+                    this.speed = this.direction * 500;
+                    shark.imgCurrent = sharkImgs[1];
+                }
+            }
+
+            //Überprüfe, ob rechts oder links vom Hai
+            checkSharkHorizontally(){
+                if((this.x + 32) < shark){
+
+                }
+            }
+
+            //Überprüfe, ob ober-/unterhalb vom Hai
+            //Wenn Flucht nach oben/unter ermöglicht werden möchte, dann diese Funktion ausbauen!
+            checkSharkVertically(){
+                //Dein Code
             }
 
             printStats(){
@@ -90,15 +138,42 @@
             constructor(ctx){
                 super(0 ,0 , sharkImgs[0], ctx);
                 this.imgBiting = sharkImgs[1];
+                this.oldX = 0;
+                this.oldY = 0;
+                this.direction = 1;
 
                 //An die Maus binden
                 registerMouse(this);
             }
 
             updatePositition(x, y){
+                this.direction = this.calculateDirection();
+                this.oldX = this.x;
+                this.oldY = this.y;
                 this.x = x;
                 this.y = y;
+                this.centerX = this.x+69;
+                this.centerY = this.y+197
                 console.log('X: '+this.x+'/ Y: '+this.y);
+            }
+
+            calculateDirection(){
+                if(this.oldX<this.x){
+                    return 1;
+                } else{
+                    return -1;
+                }
+            }
+
+            draw = function(){
+                if((this.direction == -1) && (this.oldX - this.x) > 1 ){
+                    ctx.translate(this.x + this.imgCurrent.width, this.y);
+                    ctx.scale(-1,1);
+                    this.ctx.drawImage(this.imgCurrent, 197, -69);
+                    ctx.setTransform(1,0,0,1,0,0);
+                } else{
+                    this.ctx.drawImage(this.imgCurrent, this.x-192, this.y-69);
+                }
             }
         }
         
