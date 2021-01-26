@@ -28,17 +28,16 @@
 
 
         class Drawable{
-            constructor(x, y, imgSprite, ctx){
+            constructor(x, y, imgCurrent, ctx){
                 this.y = y;
                 this.x = x;
-                this.imgSprite = imgSprite;
+                this.imgCurrent = imgCurrent;
                 this.ctx = ctx;
             }
 
             draw(){
-                this.ctx.drawImage(this.imgSprite, this.x, this.y);
+                this.ctx.drawImage(this.imgCurrent, this.x, this.y);
             }
-
         }
 
 
@@ -49,8 +48,8 @@
             //Direction:
             //-1 = links
             // 1 = rechts
-            constructor(x, y, direction, imgSprite, ctx){
-                super(x, y, imgSprite, ctx);
+            constructor(x, y, direction, imgCurrent, ctx){
+                super(x, y, imgCurrent, ctx);
                 //Speed ist in Pixel pro Sekunde
                 this.speed = direction * 500;
                 this.toDelete = false;
@@ -83,10 +82,25 @@
                 console.log('X: '+this.x);
                 console.log('Y: '+this.y);
                 console.log('Direction: '+this.direction);
-                console.log('IMG: '+this.imgSprite.src);
+                console.log('IMG: '+this.imgCurrent.src);
             }
         }
 
+        class Shark extends Drawable{
+            constructor(ctx){
+                super(0 ,0 , sharkImgs[0], ctx);
+                this.imgBiting = sharkImgs[1];
+
+                //An die Maus binden
+                registerMouse(this);
+            }
+
+            updatePositition(x, y){
+                this.x = x;
+                this.y = y;
+                console.log('X: '+this.x+'/ Y: '+this.y);
+            }
+        }
         
         class Layer extends Drawable{
             constructor(contentArray){
@@ -102,13 +116,14 @@
         //Canvas-Variabeln
         let canvas= document.getElementById('mCanvas');
         let ctx = canvas.getContext('2d');
-        let gameFrame = 0;
 
         //Liste mit Fischbilder
-        let fishImgSprites = new Array();
+        let fishImgs = new Array();
 
+        //Hai
+        let shark;
         //Liste mit Haibilder
-        let sharkImgSprites = new Array();
+        let sharkImgs = new Array();
 
         //Liste mit Szenerie-Layers
         let layers = new Array();
@@ -117,7 +132,9 @@
             layers.push(new Layer(new Array()));
         }
 
+        //Variable um geladene Szenerie-Bilder aufzuzählen
         let countImg = 0;
+        
         //Variabeln um zu verhindern, dass ein Fisch während dem Zeichnen gespawnt/gelöscht wird
         let makeNewFish = false;
         //Ein 'Fisch-Müllkorb'
@@ -134,16 +151,16 @@
             for(let i=0; i<5; i++){
                 let img = new Image();
                 img.src = 'img/fish/'+ i +'.png';
-                fishImgSprites.push(img);
+                fishImgs.push(img);
             }
 
             console.log('All fish images are loaded');
             
             //Haibilder laden
-            sharkImgSprites[0] = new Image();
-            sharkImgSprites[0].src = 'img/shark/biting.png';
-            sharkImgSprites[1] = new Image();
-            sharkImgSprites[1].src = 'img/shark/normal.png';
+            sharkImgs[0] = new Image();
+            sharkImgs[0].src = 'img/shark/biting.png';
+            sharkImgs[1] = new Image();
+            sharkImgs[1].src = 'img/shark/normal.png';
             console.log('All shark images are loaded');
 
             //Durch jedes Layer-Listenelement iterieren und Bild hinzufügen
@@ -158,7 +175,7 @@
                     }
                 }
                 img.src = 'img/z'+ i +'.png';
-                layers[i].imgSprite = img;
+                layers[i].imgCurrent = img;
                 layers[i].ctx = ctx;
             }
 
@@ -173,23 +190,23 @@
 
             //Grün
             if(randColor < 0.2){
-                fishImg = fishImgSprites[0];
+                fishImg = fishImgs[0];
             }
             //Orange
             if((randColor > 0.2) && (randColor < 0.4)){
-                fishImg = fishImgSprites[1];
+                fishImg = fishImgs[1];
             }
             //Gelb
             if((randColor > 0.4) && (randColor < 0.6)){
-                fishImg = fishImgSprites[2];
+                fishImg = fishImgs[2];
             }
             //Pink
             if((randColor > 0.6) && (randColor < 0.8)){
-                fishImg = fishImgSprites[3];
+                fishImg = fishImgs[3];
             }
             //Blau
             if(randColor < 0.8){
-                fishImg = fishImgSprites[4];
+                fishImg = fishImgs[4];
             }
 
             //Generiere zufällig Y-Position. 1060 = 1080px - Fisch-Höhe(64px)
@@ -226,11 +243,11 @@
             //Fisch in die Layer einfügen
             layers[indexOfLayer].contentArray.push(fish);
             fish.parentLayer = indexOfLayer;
-            console.log('Fish spawned in Layer '+ fish.parentLayer);
-
+            
 
             //Debugging
             //console.log(JSON.stringify(layer.contentArray));
+            //console.log('Fish spawned in Layer '+ fish.parentLayer);
 
             //Sorgt dafür, dass nach 0.5s makeNewFish auf true gesetzt wird
             makeNewFish = false;
@@ -241,15 +258,6 @@
             return new Promise(resolve => setTimeout(resolve, miliseconds));
         }
 
-        function start(){
-            spawnFish();
-
-            //erster Animationsschritt
-            window.requestAnimationFrame(function(actualTime){
-                showFrame(actualTime, 0, 0);
-            });
-        }
-
         function getContentIndexOfFish(f) {    
             for (let i = 0; i < layers[f.parentLayer].contentArray.length; i++) {
                 if (layers[f.parentLayer].contentArray[i] = f) {
@@ -258,6 +266,18 @@
             }
             return -1;
         }
+
+        function start(){
+            spawnFish();
+
+            //erster Animationsschritt
+            window.requestAnimationFrame(function(actualTime){
+                showFrame(actualTime, 0, 0);
+            });
+
+            shark = new Shark(ctx);
+        }
+
 
 //-------------------------------------------------------------------------------------------
 //Animation-Methode
@@ -294,7 +314,8 @@
                 fishToDelete.splice(index, 1);
             });
 
-            //Code um neues Frame zu erstellen           
+
+            //Code um neues Frame zu erstellen (Fische, Layers)           
             for(let i = 0; i<layers.length; i++){
 
                 //1. Hintergrund der Ebene zeichnen
@@ -315,6 +336,9 @@
                 }
             }
 
+            //Code um neues Frame zu erstellen (Hai)
+            shark.draw();
+
             //nächster Animationsschritt (rekursiv)
             window.requestAnimationFrame(function(actualTime){
                 showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame);
@@ -329,6 +353,22 @@
         window.onload = (event) => {
             preloadImages(ctx);
             start();
+        }
+
+        //Methode bindet den Hai an die Position des Mauszeigers
+        function registerMouse(shark){
+            window.addEventListener('mousemove', e =>{
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+                let domRect = canvas.getBoundingClientRect();
+                let cLeft = domRect.left;
+                let cTop = domRect.top;
+                let factor = domRect.width/1920;
+                //check if on canvas
+                if( ((clientX >= cLeft) && (clientX <= (cLeft + canvas.clientWidth))) && ((clientY >= cTop) && (clientY <= (cTop + canvas.clientHeight))) ){
+                    shark.updatePositition(clientX/factor, clientY / factor);
+                }
+            });
         }
 
     </script>
