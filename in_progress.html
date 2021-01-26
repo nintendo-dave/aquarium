@@ -69,18 +69,30 @@
 
             updatePositition(passedTimeSincePreviousFrame){
 
-                //TODO: IF SHARK NEAR, SET direction to opposite side of shark
-                this.oldX = this.x;
-                this.oldY = this.y;
-                this.calculateFear();
-                this.x += (passedTimeSincePreviousFrame/1000) * this.speed;
-                this.centerX = this.x+32;
-                this.centerY = this.y+19.5;
-
                 //Überprüfe, ob noch im Canvas
-                if(((this.x < -64) || (this.x > 1920))){
+                if(((this.x < -64) || (this.x > 1940))){
                     this.toDelete = true;
-                    console.log('Time to go');
+                    console.log(this.direction +' Time to go: '+this.x+'/'+ this.y);
+                } else{
+                    this.oldX = this.x;
+                    this.oldY = this.y;
+                    this.calculateFear();
+                    this.x += (passedTimeSincePreviousFrame/1000) * this.speed;
+                    this.centerX = this.x+32;
+                    this.centerY = this.y+19.5;
+                }
+
+            }
+
+            draw = function(){
+
+                if((this.direction == 1) ){
+                    ctx.translate(this.x + this.imgCurrent.width, this.y);
+                    ctx.scale(-1,1);
+                    this.ctx.drawImage(this.imgCurrent, 32, -19.5);
+                    ctx.setTransform(1,0,0,1,0,0);
+                } else{
+                    this.ctx.drawImage(this.imgCurrent, this.x-32, this.y-19.5);
                 }
 
             }
@@ -89,11 +101,9 @@
                 //Zuerst schauen, ob der Hai und der Fisch auf der gleichen
                 //X oder Y Koordinate sind
                 if(Math.floor(shark.centerX) == Math.floor(this.centerX)){
-                    console.log('Same x');
                     return this.centerY - shark.centerY;
                 } else if(Math.floor(shark.centerY) == Math.floor(this.centerY)){
-                    return this.centerX - shark.centerX;
-                    console.log('Same y');
+                    return this.centerY - shark.centerY;
                 } else{
                     //Berechne Distanz durch Satz von Pythagoras
                     return Math.sqrt((this.centerX-shark.centerX)**2 + (this.centerY-shark.centerY)**2);
@@ -103,10 +113,9 @@
             calculateFear(){
                 let distanceToShark = this.getDistance();
 
-                //Wenn Distanz zum Hai kleiner als 300 in-Canvas-Pixel ist, dann bekommt er Angst über
-                if(distanceToShark < 400){
+                //Wenn Distanz zum Hai kleiner als 350 in-Canvas-Pixel ist, dann bekommt er Angst über
+                if(distanceToShark < 350){
                     this.speed = this.direction * 1000;
-                    console.log('AAAAAAAAAAAAAAAAAAAAAAH X: '+ shark.centerX+'Y: '+shark.centerY);
                     this.hasFear = true;
 
                     this.direction = this.checkSharkHorizontally();
@@ -130,11 +139,19 @@
             checkSharkVertically(){
                 //Dein Code
             }
+
+            calculateDirection(){
+                if(this.oldX<this.x){
+                    return 1;
+                } else{
+                    return -1;
+                }
+            }
         }
 
         class Shark extends Drawable{
             constructor(ctx){
-                super(0 ,0 , sharkImgs[0], ctx);
+                super(540 ,960 , sharkImgs[0], ctx);
                 this.imgBiting = sharkImgs[1];
                 this.oldX = 0;
                 this.oldY = 0;
@@ -152,7 +169,9 @@
                 this.y = y;
                 this.centerX = this.x+69;
                 this.centerY = this.y+197
-                console.log('X: '+this.x+'/ Y: '+this.y);
+                
+                //Debugging
+                //console.log('X: '+this.x+'/ Y: '+this.y);
             }
 
             calculateDirection(){
@@ -164,6 +183,14 @@
             }
 
             draw = function(){
+                //Wenn ein Fisch Angst hat, dann das Maul öffnen
+                if(hasSomebodyFear){
+                    this.imgCurrent = sharkImgs[1];
+                }else{
+                    this.imgCurrent = sharkImgs[0];
+                }
+
+                //Horizontal spiegeln, wenn nach links
                 if((this.direction == -1) ){
                     ctx.translate(this.x + this.imgCurrent.width, this.y);
                     ctx.scale(-1,1);
@@ -290,7 +317,6 @@
             //Bestimmt zufällig, in welche Layer der Fisch eingefügt werden sollte
             let randLayer = Math.random();
             let indexOfLayer = 0;
-            let indexInContentArray = 0;
 
             if(randLayer < 0.25){
                 indexOfLayer = 0;
@@ -383,21 +409,24 @@
                 spawnFish();
             }
             
+            //Fische die im Müllkorb sind werden vom Canvas entfernt, wenn ihre toDelete Variable 'true' sind
+            let cleanupFishBin = new Array();
             fishToDelete.forEach(function(fish, index){
                 let fishContentIndex = getContentIndexOfFish(fish);
                 layers[fish.parentLayer].contentArray.splice(fishContentIndex, 1);
-                fishToDelete.splice(index, 1);
+                cleanupFishBin.push(index);
+                console.log('GESTAUBSAUGT: '+ fish.parentLayer+' ; '+ fishContentIndex);
             });
 
 
             //Code um neues Frame zu erstellen (Fische, Layers)           
             for(let i = 0; i<layers.length; i++){
 
-                //1. Hintergrund der Ebene zeichnen
+                //1: Hintergrund der Ebene zeichnen
                 layers[i].draw();
 
                 hasSomebodyFear = false;
-                //2. Iteriere durch Fisch-Liste der Ebene und aktualisiere/zeichne/lösche sie
+                //2: Iteriere durch Fisch-Liste der Ebene und aktualisiere/zeichne/lösche sie
                 for(let j = 0; j<layers[i].contentArray.length; j++){
                     
                     //Abchecken, ob Fisch gelöscht werden muss
@@ -406,7 +435,7 @@
                         fishToDelete.push(fish);
                     } else {
                         //Abchecken, ob der Fisch Angst hat
-                        if(this.hasFear){
+                        if(fish.hasFear){
                             hasSomebodyFear = true;
                         }
 
@@ -418,8 +447,12 @@
             }
 
             //Code um neues Frame zu erstellen (Hai)
+            //Die Positionsaktualisierung geschieht im mousemove-Event
             shark.draw();
 
+            //Lösche Fische aus dem Müllkorb, nachdem im Müllkorb iteriert wurde
+            fishToDelete = [];
+            
             //nächster Animationsschritt (rekursiv)
             window.requestAnimationFrame(function(actualTime){
                 showFrame(actualTime, previousFrameTime, passedTimeSincePreviousFrame);
