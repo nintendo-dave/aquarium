@@ -96,8 +96,6 @@
                     console.log('Same y');
                 } else{
                     //Berechne Distanz durch Satz von Pythagoras
-                    //console.log(this.centerX-shark.centerX+'^2 + '+this.centerY-shark.centerY+'^2');
-                    console.log(this.centerX);
                     return Math.sqrt((this.centerX-shark.centerX)**2 + (this.centerY-shark.centerY)**2);
                 }
             }
@@ -235,9 +233,9 @@
             
             //Haibilder laden
             sharkImgs[0] = new Image();
-            sharkImgs[0].src = 'img/shark/biting.png';
+            sharkImgs[0].src = 'img/shark/normal.png';
             sharkImgs[1] = new Image();
-            sharkImgs[1].src = 'img/shark/normal.png';
+            sharkImgs[1].src = 'img/shark/biting.png';
             console.log('All shark images are loaded');
 
             //Durch jedes Layer-Listenelement iterieren und Bild hinzufügen
@@ -282,7 +280,7 @@
                 fishImg = fishImgs[3];
             }
             //Blau
-            if(randColor < 0.8){
+            if(randColor > 0.8){
                 fishImg = fishImgs[4];
             }
 
